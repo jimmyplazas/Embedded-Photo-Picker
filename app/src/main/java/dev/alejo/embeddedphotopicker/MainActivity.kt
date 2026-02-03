@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalPhotoPickerComposeApi::class)
 
 package dev.alejo.embeddedphotopicker
 
@@ -42,7 +42,6 @@ import coil3.compose.AsyncImage
 import dev.alejo.embeddedphotopicker.ui.theme.EmbeddedPhotoPickerTheme
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalPhotoPickerComposeApi::class)
 class MainActivity : ComponentActivity() {
     @RequiresExtension(extension = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, version = 15)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,7 +51,7 @@ class MainActivity : ComponentActivity() {
             EmbeddedPhotoPickerTheme {
                 var attachments by remember { mutableStateOf(emptyList<Uri>()) }
 
-                val coroutineScope = rememberCoroutineScope()
+                val scope = rememberCoroutineScope()
 
                 val scaffoldState = rememberBottomSheetScaffoldState(
                     bottomSheetState = rememberStandardBottomSheetState(
@@ -65,12 +64,11 @@ class MainActivity : ComponentActivity() {
                     .Builder()
                     .setMaxSelectionLimit(5)
                     .setOrderedSelection(true)
-                    .setAccentColor(0xFF0000)
                     .build()
 
                 val photoPickerState = rememberEmbeddedPhotoPickerState(
                     onSelectionComplete = {
-                        coroutineScope.launch {
+                        scope.launch {
                             scaffoldState.bottomSheetState.hide()
                         }
                     },
@@ -83,22 +81,22 @@ class MainActivity : ComponentActivity() {
                 )
 
                 SideEffect {
-                    val isExpanded =
-                        scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                    val isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
                     photoPickerState.setCurrentExpanded(isExpanded)
                 }
 
                 BottomSheetScaffold(
                     topBar = {
-                        TopAppBar(title = { Text("Embedded Photo Picker") })
+                        TopAppBar(title = { Text(text = "Embedded Photo Picker Example") })
                     },
                     scaffoldState = scaffoldState,
-                    sheetPeekHeight = if (scaffoldState.bottomSheetState.isVisible) 300.dp else 0.dp,
+                    sheetPeekHeight = if(scaffoldState.bottomSheetState.isVisible) 300.dp else 0.dp,
                     sheetContent = {
                         EmbeddedPhotoPicker(
                             state = photoPickerState,
                             embeddedPhotoPickerFeatureInfo = photoPickerInfo,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                         )
                     }
                 ) { innerPadding ->
@@ -110,24 +108,28 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Button(
                             onClick = {
-                                coroutineScope.launch {
+                                scope.launch {
                                     scaffoldState.bottomSheetState.partialExpand()
                                 }
                             }
                         ) {
-                            Text("Open photo picker")
+                            Text(text = "Open Photo Picker")
                         }
-                        LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 64.dp)) {
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 80.dp)
+                        ) {
                             items(attachments) { uri ->
                                 AsyncImage(
                                     model = uri,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier.clickable {
-                                        coroutineScope.launch {
-                                            photoPickerState.deselectUri(uri)
+                                    modifier = Modifier
+                                        .clickable {
+                                            scope.launch {
+                                                photoPickerState.deselectUri(uri)
+                                            }
                                         }
-                                    }
                                 )
                             }
                         }
